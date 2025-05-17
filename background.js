@@ -62,13 +62,51 @@ chrome.webRequest.onBeforeRequest.addListener(
         const episodes = result.episodes || {};
         const streams = result.streams || [];
         const title = episodeId && episodes[episodeId]?.title ? episodes[episodeId].title : 'Unknown';
-        const stream = { id: episodeId || Date.now().toString(), url: details.url, title, timestamp: Date.now() };
-        streams.push(stream);
-        console.log(`[Stream] ID: ${episodeId || 'N/A'}, Title: ${title}, URL: ${details.url}, Referrer: ${details.referrer || 'N/A'}, Query ID: ${queryMatch || 'N/A'}, Track ID: ${urlTrackMatch ? urlTrackMatch[1] : 'N/A'}`); // Для отладки
-        chrome.storage.local.set({ streams }, () => {
-          console.log(`[Stream] Saved stream: ${title}`); // Для отладки
-          chrome.action.setBadgeText({ text: streams.length.toString() });
-          chrome.action.setBadgeBackgroundColor({ color: '#FF0000' });
+
+        const tryGetTitle = (callback) => {
+        if (title !== 'Unknown' || !episodeId) {
+          callback(title);
+          return;
+        }
+        setTimeout(() => {
+          chrome.storage.local.get(['episodes'], (retryResult) => {
+            const retryTitle = retryResult.episodes?.[episodeId]?.title || 'Unknown';
+            callback(retryTitle);
+          });
+        }, 500);
+      };
+
+        // Проверка на дубликат стрима
+        const isDuplicate = streams.some(stream => 
+          (episodeId && stream.id === episodeId) || stream.url === details.url
+        );
+        if (isDuplicate) {
+          console.log(`[Stream] Skipped duplicate stream: ID: ${episodeId || 'N/A'}, URL: ${details.url}`);
+          return;
+        }
+
+        tryGetTitle((finalTitle) => {
+          const stream = { id: episodeId || Date.now().toString(), url: details.url, title: finalTitle, timestamp: Date.now() };
+          streams.push(stream);
+          console.log(`[Stream] ID: ${episodeId || 'N/A'}, Title: ${finalTitle}, URL: ${details.url}, Referrer: ${details.referrer || 'N/A'}, Query ID: ${queryMatch || 'N/A'}, Track ID: ${urlTrackMatch ? urlTrackMatch[1] : 'N/A'}`);
+          chrome.storage.local.set({ streams }, () => {
+            console.log(`[Stream] Saved stream: ${finalTitle}`);
+            chrome.action.setBadgeText({ text: streams.length.toString() });
+            chrome.action.setBadgeBackgroundColor({ color: '#FF0000' });
+            // Показать уведомление
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/icon48.png',
+              title: 'Zvuk Downloader',
+              message: `Stream: ${finalTitle}`,
+              priority: 2,
+              contextMessage: finalTitle === 'Unknown' ? 'Title not found' : 'Title detected'
+            }, (notificationId) => {
+              setTimeout(() => {
+                chrome.notifications.clear(notificationId);
+              }, 3000);
+            });
+          });
         });
       });
     }
