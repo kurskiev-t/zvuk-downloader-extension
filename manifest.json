@@ -37,5 +37,11 @@
     "32": "icons/favicon-32x32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/xlsx.full.min.js"],
+      "matches": ["https://zvuk.com/*"]
+    }
+  ]
 }
