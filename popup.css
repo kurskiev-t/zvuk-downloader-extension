@@ -28,3 +28,16 @@ button {
   text-align: center;
   color: #666;
 }
+
+#clear-streams {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+#clear-streams:hover {
+  background-color: #cc0000;
+}

@@ -24,7 +24,15 @@ chrome.webRequest.onBeforeRequest.addListener(
             console.log(`[Episode] ID: ${episodeId}, Title: ${title}, URL: ${details.url}`); // Для отладки
             chrome.storage.local.get(['episodes'], (result) => {
               const episodes = result.episodes || {};
-              episodes[episodeId] = { title };
+
+              const existingEpisode = episodes[episodeId];
+              const cacheDuration = 12 * 60 * 60 * 1000; // 12 часов
+              if (existingEpisode && (Date.now() - existingEpisode.timestamp) < cacheDuration) {
+                console.log(`[Episode] Skipped fresh episode: ${episodeId}`);
+                return;
+              }
+
+              episodes[episodeId] = { title, timestamp: Date.now() };
               chrome.storage.local.set({ episodes }, () => {
                 console.log(`[Episode] Saved episode: ${episodeId} - ${title}`); // Для отладки
               });

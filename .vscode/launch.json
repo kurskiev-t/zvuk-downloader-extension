@@ -13,8 +13,9 @@
       "runtimeArgs": [
         "--load-extension=${workspaceFolder}"
       ],
+      "sourceMaps": false,
       "sourceMapPathOverrides": {
-        "webpack:///./*": "${workspaceFolder}/*"
+        "*": "${workspaceFolder}/*"
       }
     }
   ]

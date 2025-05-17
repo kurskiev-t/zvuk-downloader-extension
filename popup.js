@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const clearStreams = document.getElementById('clear-streams');
   const tableBody = document.getElementById('streams-body');
   const selectAll = document.getElementById('select-all');
   const downloadSelected = document.getElementById('download-selected');
@@ -18,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.storage.local.get(['streams'], (result) => {
       const streams = result.streams || [];
+      chrome.action.setBadgeText({ text: streams.length.toString() }, () => {
+        console.log(`[Popup] Badge set to ${streams.length}`);
+      });
       tableBody.innerHTML = '';
       streams.forEach((stream, index) => {
         const row = document.createElement('tr');
@@ -69,6 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const streams = result.streams || [];
       streams.forEach((stream) => {
         chrome.runtime.sendMessage({ type: 'download', url: stream.url, title: stream.title });
+      });
+    });
+  });
+
+  clearStreams.addEventListener('click', () => {
+    chrome.storage.local.set({ streams: [] }, () => {
+      console.log('[Popup] Streams cleared');
+      tableBody.innerHTML = '';
+      chrome.action.setBadgeText({ text: '0' }, () => {
+        console.log('[Popup] Badge reset to 0');
       });
     });
   });

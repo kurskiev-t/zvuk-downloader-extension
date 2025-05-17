@@ -29,6 +29,15 @@ document.addEventListener('click', (event) => {
   }
 });
 
+window.addEventListener('load', () => {
+  chrome.storage.local.set({ streams: [] }, () => {
+    console.log('[ContentScript] Streams cleared on page load');
+    chrome.action.setBadgeText({ text: '0' }, () => {
+      console.log('[ContentScript] Badge reset to 0');
+    });
+  });
+});
+
 const title = extractTitleFromDOM();
 if (title) {
   chrome.runtime.sendMessage({ type: 'domTitle', value: title });
