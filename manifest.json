@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Zvuk Downloader",
+  "version": "1.0",
+  "description": "Download tracks from zvuk.com with custom names",
+  "permissions": [
+    "downloads",
+    "webRequest",
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://zvuk.com/*",
+    "https://*.zvuk.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://zvuk.com/*"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/favicon-16x16.png",
+      "32": "icons/favicon-32x32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/favicon-16x16.png",
+    "32": "icons/favicon-32x32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

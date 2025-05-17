@@ -1,0 +1,30 @@
+body {
+  width: 400px;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 5px;
+  text-align: left;
+}
+
+.title-input {
+  width: 100%;
+}
+
+button {
+  margin: 5px;
+  padding: 5px 10px;
+}
+
+#not-on-zvuk {
+  text-align: center;
+  color: #666;
+}
