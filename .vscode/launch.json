@@ -12,7 +12,10 @@
       "webRoot": "${workspaceFolder}",
       "runtimeArgs": [
         "--load-extension=${workspaceFolder}"
-      ]
+      ],
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${workspaceFolder}/*"
+      }
     }
   ]
 }
