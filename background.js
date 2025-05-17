@@ -1,37 +1,61 @@
+const processedEpisodes = new Set();
+
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     // Перехват JSON-запросов с данными эпизодов
-    if (details.url.includes('episode/') && details.url.endsWith('.json')) {
+    if (details.url.includes('/episode/') && details.url.includes('.json') && details.url.includes('zvuk.com')) {
       const match = details.url.match(/episode\/(\d+)\.json/);
       if (match) {
         const episodeId = match[1];
+        if (processedEpisodes.has(episodeId)) {
+          console.log(`[Episode] Skipped duplicate ID: ${episodeId}`); // Для отладки
+          return;
+        }
+        processedEpisodes.add(episodeId);
         fetch(details.url)
-          .then((response) => response.json())
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+          })
           .then((data) => {
             const title = data?.pageProps?.hydrationData?.episodeInfo?.episodeInfo?.episode?.title || 'Unknown';
-            console.log(`[Episode] ID: ${episodeId}, Title: ${title}`); // Для отладки
+            console.log(`[Episode] ID: ${episodeId}, Title: ${title}, URL: ${details.url}`); // Для отладки
             chrome.storage.local.get(['episodes'], (result) => {
               const episodes = result.episodes || {};
               episodes[episodeId] = { title };
-              chrome.storage.local.set({ episodes });
+              chrome.storage.local.set({ episodes }, () => {
+                console.log(`[Episode] Saved episode: ${episodeId} - ${title}`); // Для отладки
+              });
             });
           })
           .catch((error) => {
-            console.error(`[Episode] Error fetching JSON for ID ${episodeId}:`, error);
+            console.error(`[Episode] Error fetching JSON for ID ${episodeId}: ${error.message}`, {
+              url: details.url,
+              error
+            });
           });
+      } else {
+        console.log(`[Episode] No ID match in JSON URL: ${details.url}`); // Для отладки
       }
     }
 
     // Перехват stream-запросов
     if (details.url.includes('/stream?')) {
-      // Пытаемся найти ID эпизода в URL или referrer
       let episodeId = null;
-      const urlMatch = details.url.match(/episode\/(\d+)/);
+      const urlTrackMatch = details.url.match(/track\/(\d+)/);
+      const urlEpisodeMatch = details.url.match(/episode\/(\d+)/);
       const referrerMatch = details.referrer?.match(/episode\/(\d+)/);
-      if (urlMatch) {
-        episodeId = urlMatch[1];
+      const queryMatch = new URLSearchParams(new URL(details.url).search).get('id');
+      if (urlTrackMatch) {
+        episodeId = urlTrackMatch[1]; // Приоритет для Track ID
+      } else if (urlEpisodeMatch) {
+        episodeId = urlEpisodeMatch[1];
       } else if (referrerMatch) {
         episodeId = referrerMatch[1];
+      } else if (queryMatch && /^\d+$/.test(queryMatch)) {
+        episodeId = queryMatch;
       }
 
       chrome.storage.local.get(['episodes', 'streams'], (result) => {
@@ -40,8 +64,9 @@ chrome.webRequest.onBeforeRequest.addListener(
         const title = episodeId && episodes[episodeId]?.title ? episodes[episodeId].title : 'Unknown';
         const stream = { id: episodeId || Date.now().toString(), url: details.url, title, timestamp: Date.now() };
         streams.push(stream);
-        console.log(`[Stream] ID: ${episodeId || 'N/A'}, Title: ${title}, URL: ${details.url}, Referrer: ${details.referrer || 'N/A'}`); // Для отладки
+        console.log(`[Stream] ID: ${episodeId || 'N/A'}, Title: ${title}, URL: ${details.url}, Referrer: ${details.referrer || 'N/A'}, Query ID: ${queryMatch || 'N/A'}, Track ID: ${urlTrackMatch ? urlTrackMatch[1] : 'N/A'}`); // Для отладки
         chrome.storage.local.set({ streams }, () => {
+          console.log(`[Stream] Saved stream: ${title}`); // Для отладки
           chrome.action.setBadgeText({ text: streams.length.toString() });
           chrome.action.setBadgeBackgroundColor({ color: '#FF0000' });
         });
@@ -61,7 +86,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (streams.length > 0) {
         const lastStream = streams[streams.length - 1];
         lastStream.title = title;
-        chrome.storage.local.set({ streams });
+        chrome.storage.local.set({ streams }, () => {
+          console.log(`[DOM] Updated stream title: ${title}`); // Для отладки
+        });
       }
     });
   }

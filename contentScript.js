@@ -1,22 +1,29 @@
 function extractTitleFromDOM() {
-  const selectors = ['h1', '[class*="title"]', '[class*="episode"]'];
+  const selectors = [
+    '.Info_titleInner__DIcGB', // Точный селектор для названия эпизода
+    'h1[class*="title"]',
+    '[class*="episode-title"]',
+    '[data-title]'
+  ];
   for (const selector of selectors) {
     const element = document.querySelector(selector);
     if (element) {
-      const title = element.textContent.trim();
-      console.log(`[DOM] Found title: ${title}`);
-      return title;
+      const title = element.textContent.trim() || element.getAttribute('data-title');
+      if (title && title !== 'Unknown') {
+        console.log(`[DOM] Found title: ${title}`); // Для отладки
+        return title;
+      }
     }
   }
   return null;
 }
 
 document.addEventListener('click', (event) => {
-  const target = event.target.closest('[class*="episode"], [class*="title"], li, div');
+  const target = event.target.closest('.Info_titleInner__DIcGB, [class*="episode"], [class*="title"]');
   if (target) {
     const title = target.textContent.trim();
-    if (title) {
-      console.log(`[Click] Title: ${title}`);
+    if (title && title !== 'Unknown') {
+      console.log(`[Click] Title: ${title}`); // Для отладки
       chrome.runtime.sendMessage({ type: 'domTitle', value: title });
     }
   }
